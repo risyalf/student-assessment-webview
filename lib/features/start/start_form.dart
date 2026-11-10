@@ -20,6 +20,7 @@ class _StartFormState extends State<StartForm> {
     super.dispose();
   }
 
+  // ignore: unused_element
   String? _validateUrl(String? raw) {
     final value = (raw ?? '').trim();
     if (value.isEmpty) return 'URL tidak boleh kosong';

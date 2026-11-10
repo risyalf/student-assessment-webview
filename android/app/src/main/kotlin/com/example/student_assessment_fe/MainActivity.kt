@@ -17,13 +17,16 @@ class MainActivity : FlutterActivity() {
             return false
         }
 
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
-        } else {
-            @Suppress("DEPRECATION")
-            activityManager.isInLockTaskMode
+        return try {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+            } else {
+                @Suppress("DEPRECATION")
+                activityManager.isInLockTaskMode
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -46,15 +49,29 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "keepScreenOn" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: true
+                    runOnUiThread {
+                        if (enabled) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+                    }
+                    result.success(true)
+                }
+
                 "startPinning" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         try {
-                            startLockTask()
+                            if (!isPinned()) {
+                                startLockTask()
+                            }
                             result.success(true)
                         } catch (e: Exception) {
                             result.error(
                                 "PIN_FAILED",
-                                "Screen pinning not enabled on device",
+                                e.localizedMessage ?: "Screen pinning not enabled on device",
                                 null
                             )
                         }
@@ -73,7 +90,13 @@ class MainActivity : FlutterActivity() {
 
                 "stopPinning" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        stopLockTask()
+                        try {
+                            if (isPinned()) {
+                                stopLockTask()
+                            }
+                        } catch (e: Exception) {
+                            // Suppress exception if vendor ROM or state already unpinned
+                        }
                     }
                     result.success(true)
                 }

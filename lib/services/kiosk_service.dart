@@ -25,6 +25,12 @@ class KioskService {
     }
   }
 
+  static Future<void> keepScreenOn([bool enabled = true]) async {
+    try {
+      await _channel.invokeMethod('keepScreenOn', {'enabled': enabled});
+    } catch (_) {}
+  }
+
   static Future<void> startPinning() async {
     try {
       await _channel.invokeMethod('startPinning');

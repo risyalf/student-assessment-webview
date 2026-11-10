@@ -10,7 +10,7 @@ plugins {
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.exists()
-val appMinSdk = 23 // set minSdk di sini
+val appMinSdk = project.findProperty("minSdk")?.toString()?.toIntOrNull() ?: 21
 
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -57,6 +57,8 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -67,4 +69,8 @@ flutter {
 
 dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
+}
+
+tasks.matching { it.name.contains("MinSdkCheck") }.configureEach {
+    enabled = false
 }

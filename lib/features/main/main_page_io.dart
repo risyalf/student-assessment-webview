@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:student_assessment_fe/services/kiosk_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, required this.initialUrl});
@@ -23,6 +24,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   void _goToStartPage() {
     if (!mounted) return;
+    unawaited(KioskService.keepScreenOn(false));
     unawaited(KioskService.stopPinningIfNeeded());
     context.goNamed('start');
   }
@@ -93,6 +95,15 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
             ),
           );
 
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController =
+          _controller.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+      androidController.setOnPlatformPermissionRequest((request) {
+        request.grant();
+      });
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_ensurePinnedAndLoaded());
     });
@@ -101,6 +112,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(KioskService.keepScreenOn(false));
     super.dispose();
   }
 
@@ -112,6 +124,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   }
 
   Future<void> _ensurePinnedAndLoaded() async {
+    unawaited(KioskService.keepScreenOn(true));
     await KioskService.startPinningIfNeeded();
 
     if (_hasLoadedInitialUrl) return;
